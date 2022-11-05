@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: backend
+    working_dir: /var/www/
+
+    volumes:
+      - ./:/var/www
+    networks:
+      - app-network
+
+  webserver:
+    image: nginx:1.21.6-alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    volumes:
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+    networks:
+      - app-network
+
+  mysql-db:
+    image: mysql:8.0
+    cap_add:
+      - SYS_NICE
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
